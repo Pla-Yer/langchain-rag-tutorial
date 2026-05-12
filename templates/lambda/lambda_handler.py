@@ -10,16 +10,16 @@ from pathlib import Path
 
 # Add project root to path
 sys.path.append('/opt/python')
+sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_community.vectorstores import FAISS
+from shared import DEFAULT_MODEL, DEFAULT_VECTOR_STORE_PATH, create_chat_model, create_embeddings
 
 # Environment variables
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 VECTOR_STORE_BUCKET = os.environ.get('VECTOR_STORE_BUCKET', '')
-VECTOR_STORE_KEY = os.environ.get('VECTOR_STORE_KEY', 'vector_stores/openai_embeddings')
+VECTOR_STORE_KEY = os.environ.get('VECTOR_STORE_KEY', f'vector_stores/{DEFAULT_VECTOR_STORE_PATH.name}')
 
 # Global variables (cached across invocations)
 vectorstore = None
@@ -44,7 +44,7 @@ def initialize():
 
     try:
         # Initialize embeddings
-        embeddings = OpenAIEmbeddings()
+        embeddings = create_embeddings()
 
         # Load vector store from S3 or local
         if VECTOR_STORE_BUCKET:
@@ -64,13 +64,21 @@ def initialize():
                     f"{local_path}/{file}"
                 )
 
-            vectorstore = FAISS.load_local(local_path, embeddings)
+            vectorstore = FAISS.load_local(
+                local_path,
+                embeddings,
+                allow_dangerous_deserialization=True
+            )
         else:
             # Load from local (Lambda layer)
-            vectorstore = FAISS.load_local('/opt/vector_stores/openai_embeddings', embeddings)
+            vectorstore = FAISS.load_local(
+                f'/opt/vector_stores/{DEFAULT_VECTOR_STORE_PATH.name}',
+                embeddings,
+                allow_dangerous_deserialization=True
+            )
 
         # Initialize LLM
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = create_chat_model(model=DEFAULT_MODEL, temperature=0)
 
         # Build RAG chain
         from langchain_core.prompts import ChatPromptTemplate

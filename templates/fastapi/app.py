@@ -19,14 +19,16 @@ import sys
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 from shared import (
     load_vector_store,
     format_docs,
-    VECTOR_STORE_DIR
+    DEFAULT_MODEL,
+    DEFAULT_VECTOR_STORE_PATH,
+    create_chat_model,
+    create_embeddings,
 )
 from shared.prompts import RAG_PROMPT_TEMPLATE
 
@@ -106,11 +108,8 @@ class AppState:
             logger.info("Initializing RAG components...")
 
             # Load embeddings and vector store
-            embeddings = OpenAIEmbeddings()
-            self.vectorstore = load_vector_store(
-                VECTOR_STORE_DIR / "openai_embeddings",
-                embeddings
-            )
+            embeddings = create_embeddings()
+            self.vectorstore = load_vector_store(DEFAULT_VECTOR_STORE_PATH, embeddings)
 
             # Create retriever
             if self.vectorstore is None:
@@ -121,7 +120,7 @@ class AppState:
             )
 
             # Initialize LLM
-            self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+            self.llm = create_chat_model(model=DEFAULT_MODEL, temperature=0)
 
             # Build RAG chain
             if self.retriever is None or self.llm is None:

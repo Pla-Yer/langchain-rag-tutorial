@@ -21,9 +21,10 @@ pip install -r requirements.txt
 
 ### 2. Configure Environment
 
-Set your OpenAI API key:
+Set your DeepSeek API key:
 ```bash
-export OPENAI_API_KEY=sk-proj-your-key-here
+export DEEPSEEK_API_KEY=your-key-here
+export LLM_BASE_URL=https://api.deepseek.com
 ```
 
 ### 3. Run Application

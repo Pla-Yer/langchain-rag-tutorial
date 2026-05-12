@@ -3,7 +3,7 @@
 ![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
 ![LangChain](https://img.shields.io/badge/langchain-%3E%3D0.1.0-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-orange.svg)
+![DeepSeek](https://img.shields.io/badge/LLM-DeepSeek--V4--Flash-orange.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg?logo=docker&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-pytest-0A9EDC.svg?logo=pytest&logoColor=white)
 
@@ -24,7 +24,7 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Configure API key
-echo "OPENAI_API_KEY=sk-proj-your-key-here" > .env
+echo "DEEPSEEK_API_KEY=your-key-here" > .env
 
 # Start learning
 jupyter notebook notebooks/00_index.ipynb
@@ -164,7 +164,7 @@ llm_rag/
 **Technical Stack:**
 
 - **LangChain** v1.0+ - Framework & LCEL
-- **OpenAI** GPT-4o-mini + GPT-4 Vision - Fast LLM + multimodal
+- **DeepSeek** V4 Flash/Pro via OpenAI-compatible API - Default chat backend
 - **FAISS** - Vector similarity search
 - **Sentence Transformers** + **Accelerate** - Fine-tuning embeddings
 - **NetworkX** - Graph algorithms

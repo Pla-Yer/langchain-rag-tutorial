@@ -5,7 +5,7 @@ Serverless deployment template for RAG on AWS Lambda.
 ## Architecture
 
 ```
-API Gateway → Lambda → RAG Chain → OpenAI
+API Gateway → Lambda → RAG Chain → DeepSeek
                   ↓
              S3 (Vector Store)
 ```
@@ -26,8 +26,8 @@ zip -r layer.zip python/
 ### 2. Upload Vector Store to S3
 
 ```bash
-aws s3 cp data/vector_stores/openai_embeddings/ \
-    s3://your-bucket/vector_stores/openai_embeddings/ \
+aws s3 cp data/vector_stores/huggingface_embeddings/ \
+    s3://your-bucket/vector_stores/huggingface_embeddings/ \
     --recursive
 ```
 
@@ -44,7 +44,7 @@ aws lambda create-function \
     --zip-file fileb://function.zip \
     --timeout 60 \
     --memory-size 512 \
-    --environment Variables="{OPENAI_API_KEY=sk-proj-xxx,VECTOR_STORE_BUCKET=your-bucket}"
+    --environment Variables="{DEEPSEEK_API_KEY=your-key,LLM_BASE_URL=https://api.deepseek.com,VECTOR_STORE_BUCKET=your-bucket}"
 ```
 
 ### 4. Attach Layer
@@ -85,7 +85,8 @@ cat response.json
 
 ## Environment Variables
 
-- `OPENAI_API_KEY`: Your OpenAI API key (required)
+- `DEEPSEEK_API_KEY`: Your DeepSeek API key (required by default)
+- `LLM_BASE_URL`: DeepSeek OpenAI-compatible endpoint, usually `https://api.deepseek.com`
 - `VECTOR_STORE_BUCKET`: S3 bucket with vector store
 - `VECTOR_STORE_KEY`: S3 key prefix for vector store
 

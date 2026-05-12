@@ -24,16 +24,26 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
+# Make script output resilient on Windows terminals with legacy encodings.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from shared.config import VECTOR_STORE_DIR, DEFAULT_LANGCHAIN_URLS
-from shared.loaders import load_and_split
+from shared.config import (
+    VECTOR_STORE_DIR,
+    DEFAULT_LANGCHAIN_URLS,
+    EMBEDDING_PROVIDER,
+    create_embeddings,
+)
+from shared.loaders import load_and_split, split_documents
 from shared.utils import save_vector_store, print_section_header
-from langchain_openai import OpenAIEmbeddings
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
 
 
 # ============================================================================
@@ -42,44 +52,32 @@ from langchain_community.vectorstores import FAISS
 
 VECTOR_STORE_CONFIGS = {
     "openai_embeddings": {
-        "description": "OpenAI text-embedding-3-small",
-        "embedding_class": OpenAIEmbeddings,
-        "embedding_kwargs": {"model": "text-embedding-3-small"},
+        "description": "OpenAI-compatible / configured default embeddings",
         "chunk_size": 1000,
         "chunk_overlap": 200,
     },
     "huggingface_embeddings": {
-        "description": "HuggingFace all-MiniLM-L6-v2",
-        "embedding_class": HuggingFaceEmbeddings,
-        "embedding_kwargs": {"model_name": "all-MiniLM-L6-v2"},
+        "description": "Configured local embeddings (HuggingFace with local fallback)",
         "chunk_size": 1000,
         "chunk_overlap": 200,
     },
     "ragas_evaluation": {
-        "description": "RAGAS evaluation store (OpenAI)",
-        "embedding_class": OpenAIEmbeddings,
-        "embedding_kwargs": {"model": "text-embedding-3-small"},
+        "description": "RAGAS evaluation store",
         "chunk_size": 1000,
         "chunk_overlap": 200,
     },
     "fusion_rag": {
-        "description": "Fusion RAG store (OpenAI)",
-        "embedding_class": OpenAIEmbeddings,
-        "embedding_kwargs": {"model": "text-embedding-3-small"},
+        "description": "Fusion RAG store",
         "chunk_size": 1000,
         "chunk_overlap": 200,
     },
     "contextual_rag_standard": {
-        "description": "Contextual RAG standard chunks (OpenAI)",
-        "embedding_class": OpenAIEmbeddings,
-        "embedding_kwargs": {"model": "text-embedding-3-small"},
+        "description": "Contextual RAG standard chunks",
         "chunk_size": 800,
         "chunk_overlap": 200,
     },
     "contextual_rag_contextual": {
-        "description": "Contextual RAG context-augmented chunks (OpenAI)",
-        "embedding_class": OpenAIEmbeddings,
-        "embedding_kwargs": {"model": "text-embedding-3-small"},
+        "description": "Contextual RAG context-augmented chunks",
         "chunk_size": 800,
         "chunk_overlap": 200,
     },
@@ -89,6 +87,62 @@ VECTOR_STORE_CONFIGS = {
 # ============================================================================
 # BUILD FUNCTIONS
 # ============================================================================
+
+
+def load_local_fallback_documents(verbose: bool = True) -> list[Document]:
+    """
+    Load local project markdown files when external documentation is unavailable.
+    """
+    local_files = [project_root / "README.md", *sorted((project_root / "docs").glob("*.md"))]
+    documents: list[Document] = []
+
+    if verbose:
+        print("Using local project documentation fallback:")
+        for file_path in local_files:
+            print(f"  - {file_path}")
+
+    for file_path in local_files:
+        try:
+            text = file_path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            text = file_path.read_text(encoding="utf-8", errors="replace")
+
+        documents.append(
+            Document(
+                page_content=text,
+                metadata={
+                    "source": str(file_path),
+                    "source_type": "local_markdown",
+                },
+            )
+        )
+
+    return documents
+
+
+def load_source_chunks(config: dict, verbose: bool = True) -> list[Document]:
+    """
+    Load source documents and split them into chunks, with local fallback.
+    """
+    try:
+        _docs, chunks = load_and_split(
+            urls=DEFAULT_LANGCHAIN_URLS,
+            chunk_size=config.get("chunk_size", 1000),
+            chunk_overlap=config.get("chunk_overlap", 200),
+            verbose=verbose,
+        )
+        return chunks
+    except Exception as exc:
+        if verbose:
+            print(f"Web documentation load failed; falling back to local docs.\n  Reason: {exc}")
+
+        local_docs = load_local_fallback_documents(verbose=verbose)
+        return split_documents(
+            local_docs,
+            chunk_size=config.get("chunk_size", 1000),
+            chunk_overlap=config.get("chunk_overlap", 200),
+            verbose=verbose,
+        )
 
 
 def build_vector_store(
@@ -125,12 +179,7 @@ def build_vector_store(
         if verbose:
             print("\n📄 Loading and splitting documents...")
 
-        documents = load_and_split(
-            urls=DEFAULT_LANGCHAIN_URLS,
-            chunk_size=config.get("chunk_size", 1000),
-            chunk_overlap=config.get("chunk_overlap", 200),
-            verbose=verbose,
-        )
+        documents = load_source_chunks(config, verbose=verbose)
 
         if verbose:
             print(f"   → Loaded {len(documents)} document chunks")
@@ -139,7 +188,7 @@ def build_vector_store(
         if verbose:
             print(f"\n🔤 Initializing embeddings: {config['description']}")
 
-        embeddings = config["embedding_class"](**config["embedding_kwargs"])
+        embeddings = create_embeddings()
 
         # Create vector store
         if verbose:
@@ -151,7 +200,7 @@ def build_vector_store(
         if verbose:
             print(f"\n💾 Saving to: {store_path}")
 
-        save_vector_store(vector_store, store_name)
+        save_vector_store(vector_store, store_path)
 
         if verbose:
             print(f"\n✅ Successfully built {store_name}")

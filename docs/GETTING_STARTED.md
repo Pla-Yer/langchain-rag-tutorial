@@ -7,7 +7,7 @@ Get up and running with LangChain RAG Tutorial in **5 minutes**.
 Before you begin, ensure you have:
 
 - Python 3.9+ installed
-- OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
+- DeepSeek API key ([Get one here](https://platform.deepseek.com/))
 - ~2GB RAM available
 - Internet connection for dependencies
 
@@ -41,7 +41,7 @@ pip install -r requirements.txt
 This will install:
 
 - LangChain and extensions
-- OpenAI SDK
+- OpenAI-compatible SDK access for DeepSeek
 - FAISS for vector storage
 - Jupyter notebook support
 - HuggingFace transformers (local embeddings)
@@ -55,7 +55,7 @@ This will install:
 Create a `.env` file in the project root:
 
 ```bash
-echo "OPENAI_API_KEY=sk-proj-your-key-here" > .env
+echo "DEEPSEEK_API_KEY=your-key-here" > .env
 ```
 
 Or copy from template:
@@ -140,7 +140,7 @@ pip install --upgrade -r requirements.txt
 **API key errors?**
 
 - Verify `.env` file exists in project root
-- Check key format: `OPENAI_API_KEY=sk-proj-...`
+- Check key format: `DEEPSEEK_API_KEY=...`
 - Ensure no quotes around the key in `.env`
 
 **Jupyter kernel issues?**

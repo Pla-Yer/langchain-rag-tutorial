@@ -24,7 +24,7 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env with your OpenAI API key
+# Edit .env with your DeepSeek API key
 ```
 
 ### 3. Run Development Server

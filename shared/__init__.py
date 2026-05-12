@@ -28,11 +28,19 @@ __version__ = "1.0.0"
 
 from .config import (  # noqa: E402
     OPENAI_API_KEY,
+    DEEPSEEK_API_KEY,
+    LLM_PROVIDER,
+    EMBEDDING_PROVIDER,
     VECTOR_STORE_DIR,
     CACHE_DIR,
+    DEFAULT_MODEL,
+    DEFAULT_TEMPERATURE,
+    DEFAULT_VECTOR_STORE_PATH,
     DEFAULT_CHUNK_SIZE,
     DEFAULT_CHUNK_OVERLAP,
     DEFAULT_K,
+    create_chat_model,
+    create_embeddings,
 )
 
 from .utils import (  # noqa: E402
@@ -68,11 +76,19 @@ from .prompts import (  # noqa: E402
 __all__ = [
     # Config
     "OPENAI_API_KEY",
+    "DEEPSEEK_API_KEY",
+    "LLM_PROVIDER",
+    "EMBEDDING_PROVIDER",
     "VECTOR_STORE_DIR",
     "CACHE_DIR",
+    "DEFAULT_MODEL",
+    "DEFAULT_TEMPERATURE",
+    "DEFAULT_VECTOR_STORE_PATH",
     "DEFAULT_CHUNK_SIZE",
     "DEFAULT_CHUNK_OVERLAP",
     "DEFAULT_K",
+    "create_chat_model",
+    "create_embeddings",
     # Utils
     "format_docs",
     "load_vector_store",

@@ -26,14 +26,13 @@ Before installing, ensure you have:
   - ~90MB for HuggingFace model (optional)
   - ~500MB for virtual environment
   - Remaining for vector stores and cache
-- **Internet**: Required for initial setup and OpenAI API calls
+- **Internet**: Required for initial setup and DeepSeek API calls
 
 ### Required Accounts
 
-1. **OpenAI Account** (Required)
-   - Sign up: <https://platform.openai.com/signup>
-   - Add billing: <https://platform.openai.com/account/billing>
-   - Get API key: <https://platform.openai.com/api-keys>
+1. **DeepSeek Account** (Required by default)
+   - Open platform: <https://platform.deepseek.com/>
+   - Get API key: <https://platform.deepseek.com/>
    - Minimum credit: $5 recommended for tutorial completion
 
 2. **GitHub Account** (Optional)
@@ -144,26 +143,24 @@ No local installation required!
 # Configure API key via Colab secrets
 from google.colab import userdata
 import os
-os.environ['OPENAI_API_KEY'] = userdata.get('OPENAI_API_KEY')
+os.environ['DEEPSEEK_API_KEY'] = userdata.get('DEEPSEEK_API_KEY')
 ```
 
 **Add secret in Colab:**
 
 1. Click 🔑 icon (Secrets) in left sidebar
-2. Add new secret: `OPENAI_API_KEY`
-3. Paste your OpenAI API key
+2. Add new secret: `DEEPSEEK_API_KEY`
+3. Paste your DeepSeek API key
 
 ## API Key Configuration
 
-### Required: OpenAI API Key
+### Required: DeepSeek API Key
 
 #### Step 1: Get Your API Key
 
-1. Visit [OpenAI Platform](https://platform.openai.com/api-keys)
-2. Click "+ Create new secret key"
-3. Name it (e.g., "langchain-rag-tutorial")
-4. **Copy immediately** - you won't see it again!
-5. Store securely (password manager recommended)
+1. Visit [DeepSeek Platform](https://platform.deepseek.com/)
+2. Create an API key
+3. Store it securely (password manager recommended)
 
 #### Step 2: Create `.env` File
 
@@ -176,19 +173,20 @@ cp .env.example .env
 Then edit `.env` with your key:
 
 ```bash
-OPENAI_API_KEY=sk-proj-your-actual-key-here
+DEEPSEEK_API_KEY=your-actual-key-here
+LLM_BASE_URL=https://api.deepseek.com
 ```
 
 **Option B: Command Line**
 
 ```bash
-echo "OPENAI_API_KEY=sk-proj-your-actual-key-here" > .env
+echo "DEEPSEEK_API_KEY=your-actual-key-here" > .env
 ```
 
 **Option C: Manual Creation**
 
 1. Create file named `.env` in project root
-2. Add single line: `OPENAI_API_KEY=sk-proj-...`
+2. Add `DEEPSEEK_API_KEY=...`
 3. Save (no quotes needed around key)
 
 #### Step 3: Security Verification
@@ -261,25 +259,24 @@ LOG_LEVEL=INFO
 #### LLM Configuration
 
 ```bash
-# OpenAI model to use
-DEFAULT_MODEL=gpt-4o-mini
+# DeepSeek model to use
+DEFAULT_MODEL=deepseek-v4-flash
 
 # Temperature (0.0 = deterministic, 1.0 = creative)
 DEFAULT_TEMPERATURE=0
 
-# Embeddings model
-OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+# Embeddings backend
+EMBEDDING_PROVIDER=huggingface
 ```
 
 **Model options:**
-- `gpt-4o-mini` - Fast, cost-effective (recommended)
-- `gpt-4o` - Most capable, slower, expensive
-- `gpt-4-turbo` - Balanced performance
-- `gpt-3.5-turbo` - Fastest, least capable
+- `deepseek-v4-flash` - Fast, cost-effective (recommended)
+- `deepseek-v4-pro` - More capable, slower, more expensive
+- `deepseek-chat` - Legacy compatibility alias, deprecated by DeepSeek on 2026-07-24
 
 **Embedding options:**
-- `text-embedding-3-small` - 1536 dimensions, faster, cheaper
-- `text-embedding-3-large` - 3072 dimensions, more accurate
+- `huggingface` - local default, no API key required
+- `openai` - optional if you explicitly want OpenAI embeddings
 
 #### Retrieval Configuration
 

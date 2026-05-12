@@ -4,7 +4,11 @@ Provides functions for loading and splitting documents from various sources.
 """
 
 import datetime
-from typing import List, Optional, Tuple, Dict
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+import requests
+from bs4 import BeautifulSoup
 from langchain_core.documents import Document
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -12,8 +16,114 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from .config import (
     DEFAULT_CHUNK_SIZE,
     DEFAULT_CHUNK_OVERLAP,
-    DEFAULT_LANGCHAIN_URLS
+    DEFAULT_LANGCHAIN_URLS,
+    PROJECT_ROOT,
+    USER_AGENT,
 )
+
+
+def download_langchain_docs_to_local(
+    urls: Optional[List[str]] = None,
+    target_dir: str | Path | None = None,
+    verbose: bool = True,
+) -> List[Path]:
+    """
+    Download LangChain documentation pages into local text files.
+
+    Args:
+        urls: List of URLs to download (defaults to DEFAULT_LANGCHAIN_URLS)
+        target_dir: Directory for downloaded text files
+        verbose: Whether to print status messages
+
+    Returns:
+        List[Path]: Paths to downloaded local text files
+    """
+    if urls is None:
+        urls = DEFAULT_LANGCHAIN_URLS
+
+    if target_dir is None:
+        target_dir = PROJECT_ROOT / "data" / "source_docs" / "langchain"
+
+    target_path = Path(target_dir)
+    target_path.mkdir(parents=True, exist_ok=True)
+
+    if verbose:
+        print(f"Downloading {len(urls)} documents to local directory...")
+        print(f"  - Target: {target_path}")
+
+    local_paths: List[Path] = []
+
+    for index, url in enumerate(urls, start=1):
+        slug = url.rstrip("/").split("/")[-1] or f"doc_{index}"
+        local_file = target_path / f"{index:02d}_{slug}.txt"
+
+        if verbose:
+            print(f"  - {url}")
+
+        response = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=30)
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.text, "html.parser")
+        for tag in soup(["script", "style", "noscript"]):
+            tag.decompose()
+
+        lines = [line.strip() for line in soup.get_text("\n").splitlines()]
+        text = "\n".join(line for line in lines if line)
+        local_file.write_text(text, encoding="utf-8")
+        local_paths.append(local_file)
+
+    if verbose:
+        print(f"OK Downloaded {len(local_paths)} local documents")
+
+    return local_paths
+
+
+def load_local_text_docs(
+    local_paths: List[str | Path],
+    original_urls: Optional[List[str]] = None,
+    add_metadata: bool = True,
+    verbose: bool = True,
+) -> List[Document]:
+    """
+    Load locally saved text files as LangChain Documents.
+
+    Args:
+        local_paths: Paths to local text files
+        original_urls: Optional source URLs aligned by index
+        add_metadata: Whether to add custom metadata fields
+        verbose: Whether to print status messages
+
+    Returns:
+        List[Document]: Loaded documents with metadata
+    """
+    docs: List[Document] = []
+    current_date = datetime.date.today().isoformat()
+
+    for index, local_path in enumerate(local_paths):
+        path_obj = Path(local_path)
+        text = path_obj.read_text(encoding="utf-8")
+        metadata = {
+            "source": original_urls[index] if original_urls and index < len(original_urls) else str(path_obj),
+            "local_path": str(path_obj),
+        }
+
+        if add_metadata:
+            metadata.update(
+                {
+                    "source_type": "local_text_download",
+                    "process_date": current_date,
+                    "domain": "langchain",
+                }
+            )
+
+        docs.append(Document(page_content=text, metadata=metadata))
+
+    if verbose:
+        print(f"OK Loaded {len(docs)} local documents")
+        if add_metadata:
+            print("OK Added custom metadata to all documents")
+
+    return docs
 
 
 def load_langchain_docs(

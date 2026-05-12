@@ -16,14 +16,16 @@ from typing import Tuple, Optional, Any
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 from shared import (
     load_vector_store,
     format_docs,
-    VECTOR_STORE_DIR
+    DEFAULT_MODEL,
+    DEFAULT_VECTOR_STORE_PATH,
+    create_chat_model,
+    create_embeddings,
 )
 from shared.prompts import RAG_PROMPT_TEMPLATE
 
@@ -56,14 +58,11 @@ def initialize_rag() -> Tuple[Optional[Any], Optional[Any]]:
     """Initialize RAG components (cached)"""
     try:
         # Load embeddings and vector store
-        embeddings = OpenAIEmbeddings()
-        vectorstore = load_vector_store(
-            VECTOR_STORE_DIR / "openai_embeddings",
-            embeddings
-        )
+        embeddings = create_embeddings()
+        vectorstore = load_vector_store(DEFAULT_VECTOR_STORE_PATH, embeddings)
 
         # Initialize LLM
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = create_chat_model(model=DEFAULT_MODEL, temperature=0)
 
         return vectorstore, llm
 
@@ -115,7 +114,8 @@ def main() -> None:
         st.markdown("""
         This is a production-ready RAG application built with:
         - **LangChain** for RAG pipelines
-        - **OpenAI** for embeddings and LLM
+        - **DeepSeek** for the chat model
+        - **HuggingFace** for local embeddings
         - **FAISS** for vector search
         - **Streamlit** for UI
 
